@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+{% block title %}Resultado — FraçãoQuest{% endblock %}
+
+{% block extra_head %}
+<style>
+.feedback-wrap {
+    max-width: 680px;
+    margin: 40px auto;
+    padding: 0 16px 60px;
+    text-align: center;
+    animation: fadeUp .4s ease;
+}
+
+.resultado-icone {
+    font-size: 5rem;
+    display: block;
+    margin-bottom: 16px;
+    animation: {% if correto %}pulseGlow{% else %}shake{% endif %} .6s ease;
+}
+
+.resultado-titulo {
+    font-family: var(--cinzel);
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    font-weight: 900;
+    margin-bottom: 8px;
+    color: {% if correto %}#4ade80{% else %}#f87171{% endif %};
+    text-shadow: 0 0 30px {% if correto %}rgba(74,222,128,.4){% else %}rgba(248,113,113,.4){% endif %};
+}
+
+.resultado-sub {
+    font-family: var(--crimson);
+    font-style: italic;
+    font-size: 1.1rem;
+    color: var(--texto2);
+    margin-bottom: 24px;
+}
+
+/* XP ganho */
+.xp-ganho {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(240,192,64,.08);
+    border: 1px solid rgba(240,192,64,.25);
+    padding: 8px 20px;
+    font-family: var(--cinzel);
+    font-size: .9rem;
+    color: var(--ouro);
+    margin-bottom: 24px;
+    letter-spacing: .1em;
+}
+
+/* Resposta do usuário vs correta */
+.respostas-compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.resp-card {
+    padding: 14px;
+    border: 1px solid var(--borda);
+    text-align: left;
+}
+
+.resp-label {
+    font-family: var(--cinzel);
+    font-size: .6rem;
+    letter-spacing: .2em;
+    margin-bottom: 6px;
+}
+
+.resp-valor {
+    font-family: var(--crimson);
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.resp-card.errada {
+    border-color: rgba(248,113,113,.3);
+    background: rgba(248,113,113,.04);
+}
+.resp-card.errada .resp-label { color: #f87171; }
+.resp-card.errada .resp-valor { color: #f87171; }
+
+.resp-card.certa {
+    border-color: rgba(74,222,128,.3);
+    background: rgba(74,222,128,.04);
+}
+.resp-card.certa .resp-label { color: #4ade80; }
+.resp-card.certa .resp-valor { color: #4ade80; }
+
+/* Explicação */
+.explicacao-box {
+    background: rgba(255,255,255,.02);
+    border: 1px solid var(--borda);
+    border-left: 3px solid {{ fase.cor }};
+    padding: 16px 18px;
+    text-align: left;
+    margin-bottom: 24px;
+}
+
+.explicacao-titulo {
+    font-family: var(--cinzel);
+    font-size: .65rem;
+    letter-spacing: .2em;
+    color: {{ fase.cor }};
+    margin-bottom: 8px;
+}
+
+.explicacao-texto {
+    font-family: var(--crimson);
+    font-size: 1.05rem;
+    color: var(--texto2);
+    line-height: 1.7;
+}
+
+/* Pergunta que foi feita */
+.pergunta-recap {
+    background: rgba(255,255,255,.02);
+    border: 1px solid var(--borda);
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    text-align: left;
+    font-family: var(--crimson);
+    font-size: 1rem;
+    color: var(--texto2);
+    font-style: italic;
+    line-height: 1.5;
+    white-space: pre-line;
+}
+
+/* Vida do chefão */
+.chefao-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    background: rgba(220,38,38,.05);
+    border: 1px solid rgba(220,38,38,.2);
+}
+
+.chefao-status-emoji { font-size: 1.8rem; }
+
+.chefao-barra-wrap { flex: 1; }
+.chefao-barra-label {
+    font-family: var(--cinzel);
+    font-size: .6rem;
+    letter-spacing: .15em;
+    color: var(--texto2);
+    margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+}
+.chefao-barra {
+    height: 6px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid var(--borda);
+    overflow: hidden;
+}
+.chefao-barra-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #dc2626, #ef4444);
+    box-shadow: 0 0 8px rgba(220,38,38,.4);
+    transition: width .6s ease;
+}
+
+.btn-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Tempo badge */
+.tempo-badge {
+    display: inline-block;
+    font-family: var(--cinzel);
+    font-size: .65rem;
+    letter-spacing: .12em;
+    padding: 3px 10px;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+.tempo-badge.rapido {
+    color: #4ade80;
+    border: 1px solid rgba(74,222,128,.3);
+    background: rgba(74,222,128,.06);
+}
+.tempo-badge.normal {
+    color: var(--texto2);
+    border: 1px solid var(--borda);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="feedback-wrap">
+
+    {% if correto %}
+        <span class="resultado-icone">⚔️</span>
+        <div class="resultado-titulo">ACERTO!</div>
+        <div class="resultado-sub">
+            Seu ataque acertou em cheio o {{ fase.chefao }}!
+            {% if tempo < 10 %}
+                <span class="tempo-badge rapido">⚡ RESPOSTA RÁPIDA!</span>
+            {% else %}
+                <span class="tempo-badge normal">{{ tempo }}s</span>
+            {% endif %}
+        </div>
+        {% if xp_ganho %}
+        <div class="xp-ganho">
+            ✦ +{{ xp_ganho }} XP GANHO
+            {% if tempo < 10 %} · Bônus de velocidade incluso!{% endif %}
+        </div>
+        {% endif %}
+    {% else %}
+        <span class="resultado-icone">💢</span>
+        <div class="resultado-titulo">ERROU!</div>
+        <div class="resultado-sub">
+            {% if resposta_usuario == '__TIMEOUT__' %}
+                Tempo esgotado! O {{ fase.chefao }} aproveitou sua hesitação.
+            {% else %}
+                O {{ fase.chefao }} contra-atacou! Você perdeu 1 ❤
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <!-- Pergunta recap -->
+    <div class="pergunta-recap">{{ pergunta.pergunta }}</div>
+
+    <!-- Comparação de respostas (só se errou) -->
+    {% if not correto and resposta_usuario != '__TIMEOUT__' %}
+    <div class="respostas-compare">
+        <div class="resp-card errada">
+            <div class="resp-label">✗ SUA RESPOSTA</div>
+            <div class="resp-valor">{{ resposta_usuario }}</div>
+        </div>
+        <div class="resp-card certa">
+            <div class="resp-label">✓ RESPOSTA CORRETA</div>
+            <div class="resp-valor">{{ pergunta.resposta }}</div>
+        </div>
+    </div>
+    {% elif not correto %}
+    <div class="resp-card certa" style="margin-bottom:16px;text-align:left">
+        <div class="resp-label">✓ RESPOSTA CORRETA ERA</div>
+        <div class="resp-valor">{{ pergunta.resposta }}</div>
+    </div>
+    {% endif %}
+
+    <!-- Explicação sempre visível -->
+    <div class="explicacao-box">
+        <div class="explicacao-titulo">✦ EXPLICAÇÃO</div>
+        <div class="explicacao-texto">{{ pergunta.explicacao }}</div>
+    </div>
+
+    <!-- Status do chefão -->
+    <div class="chefao-status">
+        <span class="chefao-status-emoji">{{ fase.emoji_chefao }}</span>
+        <div class="chefao-barra-wrap">
+            <div class="chefao-barra-label">
+                <span>{{ fase.chefao | upper }}</span>
+                <span>{{ vida_chefao }}/{{ fase.vida_chefao }} ❤</span>
+            </div>
+            <div class="chefao-barra">
+                <div class="chefao-barra-fill" style="width: {{ [vida_chefao / fase.vida_chefao * 100, 0]|max|int }}%"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="btn-row">
+        <a href="{{ url_for('batalha', fase_id=fase.id) }}" class="btn btn-ouro btn-lg">
+            ⚔ PRÓXIMA PERGUNTA
+        </a>
+        <a href="{{ url_for('index') }}" class="btn btn-sm" style="color:var(--texto2);border-color:var(--borda);align-self:center">
+            🗺 Mapa
+        </a>
+    </div>
+
+</div>
+{% endblock %}
